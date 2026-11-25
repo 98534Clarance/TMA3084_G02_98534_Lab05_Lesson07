@@ -8,7 +8,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Lab B - DataTable',
+      title: 'Lab 05: DataTable Example',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        useMaterial3: true,
+      ),
       home: const CarTablePage(),
     );
   }
@@ -18,44 +22,85 @@ class Car {
   Car(this.make, this.model, this.price);
 
   final String make;
-  final String model; // Intentionally String instead of int in partial version
+  final int model;
   final int price;
 }
 
-class CarTablePage extends StatelessWidget {
-  CarTablePage({super.key});
+class CarTablePage extends StatefulWidget {
+  const CarTablePage({super.key});
+
+  @override
+  State<CarTablePage> createState() => _CarTablePageState();
+}
+
+class _CarTablePageState extends State<CarTablePage> {
+  int? sortColumnIndex;
+  bool sortAscending = true;
 
   final List<Car> cars = [
-    Car('Honda', '2021', 35000),
-    Car('Toyota', '2011', 6000),
-    Car('BMW', '2010', 9000),
+    Car('Honda', 2021, 35000),
+    Car('Toyota', 2011, 6000),
+    Car('BMW', 2010, 9000),
   ];
+
+  void sortBy(
+    int columnIndex,
+    bool ascending,
+    int Function(Car a, Car b) compare,
+  ) {
+    setState(() {
+      cars.sort((a, b) => ascending ? compare(a, b) : compare(b, a));
+      sortColumnIndex = columnIndex;
+      sortAscending = ascending;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Missing sortColumnIndex, sortAscending, and onSort callbacks
     return Scaffold(
       appBar: AppBar(
         title: const Text('Lab 05: DataTable Example'),
+        backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
       ),
-      body: DataTable(
-        border: TableBorder.all(color: Colors.black),
-        columns: const [
-          DataColumn(label: Text('Car Make')),
-          DataColumn(label: Text('Model')),
-          DataColumn(label: Text('Price')),
-        ],
-        rows: cars
-            .map(
-              (car) => DataRow(
-                cells: [
-                  DataCell(Text(car.make)),
-                  DataCell(Text(car.model)),
-                  DataCell(Text(car.price.toString())),
-                ],
-              ),
-            )
-            .toList(),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: DataTable(
+          sortColumnIndex: sortColumnIndex,
+          sortAscending: sortAscending,
+          border: TableBorder.all(color: Colors.black),
+          headingRowColor: WidgetStateProperty.all<Color>(Colors.grey),
+          columns: [
+            DataColumn(
+              label: const Text('Car Make'),
+              onSort: (i, asc) =>
+                  sortBy(i, asc, (a, b) => a.make.compareTo(b.make)),
+            ),
+            DataColumn(
+              label: const Text('Model'),
+              numeric: true,
+              onSort: (i, asc) =>
+                  sortBy(i, asc, (a, b) => a.model.compareTo(b.model)),
+            ),
+            DataColumn(
+              label: const Text('Price'),
+              numeric: true,
+              onSort: (i, asc) =>
+                  sortBy(i, asc, (a, b) => a.price.compareTo(b.price)),
+            ),
+          ],
+          rows: cars
+              .map(
+                (car) => DataRow(
+                  cells: [
+                    DataCell(Text(car.make)),
+                    DataCell(Text(car.model.toString())),
+                    DataCell(Text(car.price.toString())),
+                  ],
+                ),
+              )
+              .toList(),
+        ),
       ),
     );
   }
